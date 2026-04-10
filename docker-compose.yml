@@ -1,0 +1,154 @@
+name: smartmenu
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: smartmenu-postgres
+    environment:
+      POSTGRES_USER: smartmenu
+      POSTGRES_PASSWORD: smartmenu
+      POSTGRES_DB: smartmenu
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./infrastructure/postgres/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U smartmenu -d smartmenu"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: smartmenu-redis
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  ai-orchestrator:
+    build:
+      context: ./services/ai-orchestrator
+    image: smartmenu/ai-orchestrator:local
+    environment:
+      PORT: 3001
+      SERVICE_NAME: ai-orchestrator
+      DATABASE_URL: postgres://smartmenu:smartmenu@postgres:5432/smartmenu_ai_orchestrator
+      REDIS_URL: redis://redis:6379
+      INVENTORY_SERVICE_URL: http://inventory-manager:3002
+      RETAIL_SERVICE_URL: http://retail-data-aggregator:3003
+      LOGISTICS_SERVICE_URL: http://logistics-route-planner:3004
+      RECIPE_SERVICE_URL: http://recipe-content-service:3005
+      USER_PROFILE_SERVICE_URL: http://user-profile-service:3006
+    ports:
+      - "3001:3001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  inventory-manager:
+    build:
+      context: ./services/inventory-manager
+    image: smartmenu/inventory-manager:local
+    environment:
+      PORT: 3002
+      SERVICE_NAME: inventory-manager
+      DATABASE_URL: postgres://smartmenu:smartmenu@postgres:5432/smartmenu_inventory
+      BOT_GATEWAY_URL: http://telegram-bot-gateway:3007
+    ports:
+      - "3002:3002"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  retail-data-aggregator:
+    build:
+      context: ./services/retail-data-aggregator
+    image: smartmenu/retail-data-aggregator:local
+    environment:
+      PORT: 3003
+      SERVICE_NAME: retail-data-aggregator
+      DATABASE_URL: postgres://smartmenu:smartmenu@postgres:5432/smartmenu_retail
+      REDIS_URL: redis://redis:6379
+    ports:
+      - "3003:3003"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  logistics-route-planner:
+    build:
+      context: ./services/logistics-route-planner
+    image: smartmenu/logistics-route-planner:local
+    environment:
+      PORT: 3004
+      SERVICE_NAME: logistics-route-planner
+      DATABASE_URL: postgres://smartmenu:smartmenu@postgres:5432/smartmenu_logistics
+      RETAIL_SERVICE_URL: http://retail-data-aggregator:3003
+    ports:
+      - "3004:3004"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  recipe-content-service:
+    build:
+      context: ./services/recipe-content-service
+    image: smartmenu/recipe-content-service:local
+    environment:
+      PORT: 3005
+      SERVICE_NAME: recipe-content-service
+      DATABASE_URL: postgres://smartmenu:smartmenu@postgres:5432/smartmenu_recipe
+    ports:
+      - "3005:3005"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  user-profile-service:
+    build:
+      context: ./services/user-profile-service
+    image: smartmenu/user-profile-service:local
+    environment:
+      PORT: 3006
+      SERVICE_NAME: user-profile-service
+      DATABASE_URL: postgres://smartmenu:smartmenu@postgres:5432/smartmenu_user_profile
+    ports:
+      - "3006:3006"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  telegram-bot-gateway:
+    build:
+      context: ./services/telegram-bot-gateway
+    image: smartmenu/telegram-bot-gateway:local
+    environment:
+      PORT: 3007
+      SERVICE_NAME: telegram-bot-gateway
+      AI_ORCHESTRATOR_URL: http://ai-orchestrator:3001
+      INVENTORY_SERVICE_URL: http://inventory-manager:3002
+      LOGISTICS_SERVICE_URL: http://logistics-route-planner:3004
+      RECIPE_SERVICE_URL: http://recipe-content-service:3005
+      RETAIL_SERVICE_URL: http://retail-data-aggregator:3003
+      USER_PROFILE_SERVICE_URL: http://user-profile-service:3006
+      TELEGRAM_BOT_TOKEN: change-me
+    ports:
+      - "3007:3007"
+    depends_on:
+      - ai-orchestrator
+      - inventory-manager
+      - logistics-route-planner
+      - recipe-content-service
+      - user-profile-service
+
+volumes:
+  postgres-data:

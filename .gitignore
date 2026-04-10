@@ -1,0 +1,13 @@
+node_modules/
+dist/
+services/*/src/generated/
+
+# Сервисы ведутся как отдельные Git-репозитории.
+services/*
+
+.env
+.env.*
+!.env.example
+.DS_Store
+npm-debug.log*
+docker-data/

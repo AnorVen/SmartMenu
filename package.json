@@ -1,0 +1,22 @@
+{
+  "name": "smartmenu",
+  "version": "0.1.0",
+  "private": true,
+  "description": "SmartMenu microservices workspace",
+  "scripts": {
+    "docker:build": "docker compose build",
+    "docker:up": "docker compose up",
+    "docker:down": "docker compose down",
+    "check:structure": "node scripts/check-structure.mjs",
+    "repos:sync": "bash scripts/sync-repositories.sh",
+    "setup:repos": "bash scripts/sync-repositories.sh",
+    "setup:full": "bash scripts/bootstrap-full.sh",
+    "bootstrap": "bash scripts/bootstrap-full.sh"
+  },
+  "workspaces": [
+    "services/*"
+  ],
+  "engines": {
+    "node": ">=22.0.0"
+  }
+}
