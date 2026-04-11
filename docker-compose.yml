@@ -92,7 +92,9 @@ services:
       PORT: 3004
       SERVICE_NAME: logistics-route-planner
       DATABASE_URL: postgres://smartmenu:smartmenu@postgres:5432/smartmenu_logistics
+      AI_ORCHESTRATOR_URL: http://ai-orchestrator:3001
       RETAIL_SERVICE_URL: http://retail-data-aggregator:3003
+      USER_PROFILE_SERVICE_URL: http://user-profile-service:3006
     ports:
       - "3004:3004"
     depends_on:

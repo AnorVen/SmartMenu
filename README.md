@@ -119,6 +119,7 @@ npm run check:structure
 ## Документация
 
 - [Архитектура](docs/architecture.md)
+- [Clean Architecture по сервисам](docs/clean-architecture.md)
 - [Анализ языков для сервисов](docs/language-analysis.md)
 - [Следующие шаги](docs/next-steps.md)
 - [Git-репозитории](docs/repositories.md)
